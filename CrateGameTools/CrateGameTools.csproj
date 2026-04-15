@@ -6,13 +6,26 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
+        <UseWindowsForms>true</UseWindowsForms>
         <AssemblyName>CrateGameTools</AssemblyName>
         <RootNamespace>CrateGameTools</RootNamespace>
+        <ApplicationIcon>BoxIcon.ico</ApplicationIcon>
+        <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <PublishReadyToRun>false</PublishReadyToRun>
+        <PublishTrimmed>false</PublishTrimmed>
     </PropertyGroup>
+
+    <ItemGroup>
+        <Resource Include="BoxIcon.ico">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Resource>
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="NAudio" Version="2.3.0" />
         <PackageReference Include="System.ServiceModel.Syndication" Version="9.0.0" />
     </ItemGroup>
-
 </Project>

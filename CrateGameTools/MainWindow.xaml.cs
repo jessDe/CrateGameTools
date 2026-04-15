@@ -2,21 +2,19 @@
 using System.ComponentModel;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
-using System.Xml;
-using Microsoft.Win32;
 using System.IO;
 using NAudio.Wave;
+using Application = System.Windows.Application;
+using Clipboard = System.Windows.Clipboard;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using MessageBox = System.Windows.MessageBox;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
 namespace CrateGameTools;
 
@@ -93,11 +91,14 @@ public partial class MainWindow : Window
     private bool _maintenanceAlertShown = false;
     private MediaPlayer _mediaPlayer = new MediaPlayer();
     private string _settingsFilePath;
+    private NotifyIcon _notifyIcon;
 
     public MainWindow()
     {
         InitializeComponent();
         
+        InitializeTrayIcon();
+
         // Define settings file in AppData
         string appDataPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CrateGameTools");
         if (!Directory.Exists(appDataPath)) Directory.CreateDirectory(appDataPath);
@@ -112,6 +113,79 @@ public partial class MainWindow : Window
     }
 
     private void MainWindow_Closing(object? sender, CancelEventArgs e)
+    {
+        if (MinimizeToTray.IsChecked == true && !_isExiting)
+        {
+            e.Cancel = true;
+            this.Hide();
+        }
+        else
+        {
+            _notifyIcon.Dispose();
+            SaveSettings();
+        }
+    }
+
+    private bool _isExiting = false;
+
+    private void InitializeTrayIcon()
+    {
+        _notifyIcon = new NotifyIcon();
+        
+        // Use the application icon from resources
+        try
+        {
+            var iconUri = new Uri("pack://application:,,,/BoxIcon.ico");
+            var streamInfo = Application.GetResourceStream(iconUri);
+            if (streamInfo != null)
+            {
+                using (var stream = streamInfo.Stream)
+                {
+                    _notifyIcon.Icon = new Icon(stream);
+                }
+            }
+            else
+            {
+                _notifyIcon.Icon = SystemIcons.Application;
+            }
+        }
+        catch
+        {
+            _notifyIcon.Icon = SystemIcons.Application;
+        }
+
+        _notifyIcon.Visible = true;
+        _notifyIcon.Text = "CrateGameTools";
+        _notifyIcon.DoubleClick += (s, e) => { this.Show(); this.WindowState = WindowState.Normal; this.Activate(); };
+
+        var contextMenu = new ContextMenuStrip();
+        var openItem = new ToolStripMenuItem("Open", null, (s, e) => { this.Show(); this.WindowState = WindowState.Normal; this.Activate(); });
+        var toggleTimerItem = new ToolStripMenuItem("Toggle Timer", null, (s, e) => { TimerEnabled.IsChecked = !TimerEnabled.IsChecked; });
+        var exitItem = new ToolStripMenuItem("Exit", null, (s, e) => { _isExiting = true; this.Close(); });
+
+        contextMenu.Items.Add(openItem);
+        contextMenu.Items.Add(toggleTimerItem);
+        contextMenu.Items.Add(new ToolStripSeparator());
+        contextMenu.Items.Add(exitItem);
+
+        _notifyIcon.ContextMenuStrip = contextMenu;
+        UpdateTrayTooltip();
+    }
+
+    private void UpdateTrayTooltip()
+    {
+        if (_notifyIcon == null) return;
+        
+        string lastSaveStr = "Never";
+        if (_saves.Any())
+        {
+            lastSaveStr = _saves.First().Timestamp.ToString("HH:mm:ss");
+        }
+        
+        _notifyIcon.Text = $"CrateGameTools\nLast Save: {lastSaveStr}";
+    }
+
+    private void Setting_Changed(object sender, RoutedEventArgs e)
     {
         SaveSettings();
     }
@@ -151,6 +225,7 @@ public partial class MainWindow : Window
         };
         _saves.Insert(0, newItem);
         SavesListBox.SelectedItem = newItem;
+        UpdateTrayTooltip();
 
         // Reset the timer if a new save was detected and the timer is enabled
         if (TimerEnabled.IsChecked == true)
@@ -311,20 +386,11 @@ public partial class MainWindow : Window
     private void ShowNotification(string title, string message)
     {
         // Ensure this runs on the UI thread
-        Dispatcher.Invoke(() =>
+        Dispatcher.Invoke((Action)(() =>
         {
-            // For a simple WPF app without external libraries for toast, 
-            // a MessageBox is the most direct way if it's "notifying" the user.
-            // We'll play the alarm sound before showing it as requested.
             PlayAlarmSound();
-
-            // System.ArgumentException: Der MessageBox-Dienst kann nicht mit "Owner" angezeigt werden.
-            // This happens when using MessageBoxOptions.ServiceNotification with an owner window.
-            // ServiceNotification is designed to be shown from a service, not a window.
-            // If we want it always on top, we should use DefaultDesktopOnly or just Topmost for a custom window,
-            // but for MessageBox, ServiceNotification is the "always on top" hack, but it cannot have an owner.
-            MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, MessageBoxOptions.ServiceNotification);
-        });
+            MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning, MessageBoxResult.OK, System.Windows.MessageBoxOptions.ServiceNotification);
+        }));
     }
 
     private void WatchClipboard_Click(object sender, RoutedEventArgs e)
@@ -509,6 +575,7 @@ public partial class MainWindow : Window
                     VrcAlarmEnabled = VrcAlarmEnabled.IsChecked,
                     SaveDetectionEnabled = SaveDetectionEnabled.IsChecked,
                     NotificationsEnabled = NotificationsEnabled.IsChecked,
+                    MinimizeToTray = MinimizeToTray.IsChecked,
                     Saves = _saves.ToList()
                 };
             string json = System.Text.Json.JsonSerializer.Serialize(settings);
@@ -552,6 +619,7 @@ public partial class MainWindow : Window
                     {
                         _saves.Clear();
                         foreach (var s in savedSaves) _saves.Add(s);
+                        UpdateTrayTooltip();
                     }
                 }
 
@@ -569,6 +637,11 @@ public partial class MainWindow : Window
                 if (settings.TryGetProperty("NotificationsEnabled", out var notifyProperty))
                 {
                     NotificationsEnabled.IsChecked = notifyProperty.GetBoolean();
+                }
+
+                if (settings.TryGetProperty("MinimizeToTray", out var trayProperty))
+                {
+                    MinimizeToTray.IsChecked = trayProperty.GetBoolean();
                 }
 
                 if (settings.TryGetProperty("TimerEnabled", out var timerEnabledProperty))

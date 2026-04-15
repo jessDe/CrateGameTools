@@ -136,6 +136,10 @@
                                 <TextBlock Text="General Notifications" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
                                 <CheckBox x:Name="NotificationsEnabled" Content="Enable System Notifications" Margin="0,5" Checked="NotificationsEnabled_Changed" Unchecked="NotificationsEnabled_Changed"/>
                                 <TextBlock Text="Sends a notification when the timer expires or a maintenance is starting." 
+                                           FontSize="12" Foreground="#666666" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                
+                                <CheckBox x:Name="MinimizeToTray" Content="Minimize to System Tray on Close" Margin="0,5" Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                                <TextBlock Text="When enabled, clicking the 'X' button will minimize the application to the system tray instead of closing it." 
                                            FontSize="12" Foreground="#666666" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
