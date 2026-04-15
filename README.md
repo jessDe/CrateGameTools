@@ -9,6 +9,7 @@ A small tool for the VRChat Crate Game
 ## Planned Features
 - Getting saves from VRChat Log file (requires game update)
 - Vending Machine and Boosters reminder
+- Custom Save Location + Cloud Backup
 
 ## Links
 [VRChat Crate Game](https://vrchat.com/home/world/wrld_9907d48d-47e6-4139-b859-297396ed0f13)
