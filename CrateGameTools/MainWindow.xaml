@@ -1,0 +1,147 @@
+﻿<Window x:Class="CrateGameTools.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CrateGameTools"
+        mc:Ignorable="d"
+        Title="CrateGameTools" Height="600" Width="800">
+    <Window.Resources>
+        <local:BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Window.Resources>
+    <Grid Background="{StaticResource BackgroundBrush}">
+        <TabControl Margin="10">
+            <TabItem Header="Alarms">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+                        <!-- Timer Alarm -->
+                        <GroupBox Header="Timer Alarm">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,5">
+                                    <TextBlock Text="Duration:" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold"/>
+                                    <TextBox x:Name="TimerInput" Width="100" Text="00:10:00" VerticalAlignment="Center" ToolTip="Format: hh:mm:ss" TextChanged="TimerInput_TextChanged"/>
+                                    <CheckBox x:Name="TimerEnabled" Content="Enabled" VerticalAlignment="Center" Margin="20,0,0,0" Checked="TimerEnabled_Changed" Unchecked="TimerEnabled_Changed"/>
+                                </StackPanel>
+                                <Border Background="{DynamicResource TimerBorderBrush}" CornerRadius="8" Padding="15,10" Margin="0,10,0,0">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="Time Remaining: " FontSize="16" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="TimerStatus" Text="00:10:00" FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- VRChat Maintenance Alarm -->
+                        <GroupBox Header="VRChat Maintenance">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <CheckBox x:Name="VrcAlarmEnabled" Content="Enable Notifications" VerticalAlignment="Center" Checked="VrcAlarmEnabled_Changed" Unchecked="VrcAlarmEnabled_Changed"/>
+                                    <Button Content="Refresh List" Margin="20,0,0,0" Click="CheckVrcStatus_Click" Padding="10,5"/>
+                                </StackPanel>
+                                
+                                <TextBlock Text="Upcoming Maintenances:" FontWeight="SemiBold" Margin="0,5"/>
+                                <ListBox x:Name="MaintListBox" Height="150" DisplayMemberPath="DisplayString"/>
+                                
+                                <TextBlock x:Name="VrcStatusText" Text="Status: Not checked" FontStyle="Italic" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="Saves">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="250"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <ListBox x:Name="SavesListBox" Grid.Column="0" Margin="5" SelectionChanged="SavesListBox_SelectionChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="{Binding Timestamp, StringFormat='{} {0:MM/dd HH:mm}'}" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding Notes}" FontStyle="Italic" MaxHeight="40" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <Button Grid.Column="0" VerticalAlignment="Bottom" Margin="5" x:Name="WatchClipboardBtn" 
+                            Content="Watch Clipboard: OFF" Click="WatchClipboard_Click" Height="40"/>
+
+                    <Border Grid.Column="1" Background="{StaticResource CardBrush}" CornerRadius="8" Margin="5" Padding="10">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <Grid x:Name="SaveDetailsPanel" Visibility="Collapsed">
+                                <StackPanel>
+                                    <TextBlock Text="Timestamp:" FontWeight="Bold"/>
+                                    <TextBlock x:Name="DetailTimestamp" Margin="0,0,0,10"/>
+                                    
+                                    <TextBlock Text="Notes:" FontWeight="Bold"/>
+                                    <TextBox x:Name="DetailNotes" AcceptsReturn="True" Height="100" TextWrapping="Wrap" Margin="0,0,0,10" TextChanged="DetailNotes_TextChanged"/>
+                                    
+                                    <TextBlock Text="Save Content:" FontWeight="Bold"/>
+                                    <TextBox x:Name="DetailContent" IsReadOnly="True" AcceptsReturn="True" Height="150" TextWrapping="Wrap" Background="{StaticResource BackgroundBrush}" Margin="0,0,0,10"/>
+                                    
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Copy Save" Click="CopySave_Click" Width="100" Margin="0,0,10,0"/>
+                                        <Button Content="Delete" Click="DeleteSave_Click" Width="100" Background="#FFE0E0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </ScrollViewer>
+                    </Border>
+                    
+                    <TextBlock x:Name="NoSavesText" Grid.Column="1" Text="Select a save to view details or paste a new one (Ctrl+V)" 
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#888888" Visibility="Visible"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Settings">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Border Background="{StaticResource CardBrush}" CornerRadius="12" Margin="20" Padding="20">
+                            <StackPanel>
+                                <TextBlock Text="Alarm Settings" FontSize="18" FontWeight="Bold" Margin="0,0,0,20"/>
+                                <TextBlock Text="Timer Alarm Sound:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="AlarmSoundPath" IsReadOnly="True" Margin="0,0,10,0"/>
+                                    <Button Content="Browse..." Grid.Column="1" Click="BrowseSound_Click"/>
+                                </Grid>
+                                <Button Content="Play Test" HorizontalAlignment="Left" Margin="0,10,0,0" Click="PlayTestSound_Click"/>
+
+                                <Separator Margin="0,20"/>
+
+                                <TextBlock Text="Record Custom Alarm" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,5">
+                                    <TextBlock Text="Microphone:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <ComboBox x:Name="MicComboBox" Width="250" VerticalAlignment="Center" DisplayMemberPath="ProductName"/>
+                                    <Button Content="Refresh" Click="RefreshMics_Click" Margin="10,0,0,0"/>
+                                </StackPanel>
+                                
+                                <StackPanel Orientation="Horizontal" Margin="0,10">
+                                    <Button x:Name="RecordBtn" Content="Start Recording" Click="Record_Click" Width="120"/>
+                                    <TextBlock x:Name="RecordStatus" Text="Ready" VerticalAlignment="Center" Margin="20,0,0,0" FontStyle="Italic"/>
+                                </StackPanel>
+
+                                <Separator Margin="0,20"/>
+
+                                <TextBlock Text="Save Management" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                                <CheckBox x:Name="SaveDetectionEnabled" Content="Enable Save Detection (Clipboard Monitor)" Margin="0,5" Checked="SaveDetectionEnabled_Changed" Unchecked="SaveDetectionEnabled_Changed"/>
+                                <TextBlock Text="When enabled, copying text starting with 'ENC1:' will automatically add it to your saves." 
+                                           FontSize="12" Foreground="#666666" TextWrapping="Wrap" Margin="0,0,0,20"/>
+
+                                <TextBlock Text="General Notifications" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                                <CheckBox x:Name="NotificationsEnabled" Content="Enable System Notifications" Margin="0,5" Checked="NotificationsEnabled_Changed" Unchecked="NotificationsEnabled_Changed"/>
+                                <TextBlock Text="Sends a notification when the timer expires or a maintenance is starting." 
+                                           FontSize="12" Foreground="#666666" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
