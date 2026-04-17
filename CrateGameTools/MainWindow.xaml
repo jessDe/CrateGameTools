@@ -8,9 +8,131 @@
         Title="CrateGameTools" Height="600" Width="800">
     <Window.Resources>
         <local:BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <local:HotkeyDisplayConverter x:Key="HotkeyDisplayConverter" />
+        <SolidColorBrush x:Key="BrightAlertBrush" Color="#FF5555" />
     </Window.Resources>
     <Grid Background="{StaticResource BackgroundBrush}">
         <TabControl Margin="10">
+            <TabItem Header="Dashboard">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Timer Status Card -->
+                        <Border Grid.Row="0" Grid.Column="0" Background="{StaticResource CardBrush}" CornerRadius="12" Margin="5" Padding="20">
+                            <StackPanel>
+                                <TextBlock Text="Timer Status" FontSize="18" FontWeight="Bold" Margin="0,0,0,10" Foreground="{StaticResource PrimaryBrush}"/>
+                                <TextBlock x:Name="DashTimerStatus" Text="00:00:00" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="DashTimerLabel" Text="Remaining" FontSize="12" Foreground="#888888" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Maintenance Card -->
+                        <Border Grid.Row="0" Grid.Column="1" Background="{StaticResource CardBrush}" CornerRadius="12" Margin="5" Padding="20">
+                            <StackPanel>
+                                <TextBlock Text="Maintenance" FontSize="18" FontWeight="Bold" Margin="0,0,0,10" Foreground="{StaticResource SecondaryBrush}"/>
+                                <TextBlock x:Name="DashMaintStatus" Text="No upcoming maintenance" FontSize="14" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"/>
+                                <TextBlock x:Name="DashMaintTime" Text="" FontSize="12" Foreground="#888888" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Last Save Card -->
+                        <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource CardBrush}" CornerRadius="12" Margin="5" Padding="20">
+                            <StackPanel>
+                                <TextBlock Text="Last Save" FontSize="18" FontWeight="Bold" Margin="0,0,0,10" Foreground="{StaticResource PrimaryBrush}"/>
+                                <TextBlock x:Name="DashLastSaveNotes" Text="No saves yet" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock x:Name="DashLastSaveTime" Text="None" FontSize="12" Foreground="#888888" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border x:Name="VendingCard" Grid.Row="1" Grid.Column="1" Background="{StaticResource CardBrush}" CornerRadius="12" Margin="5" Padding="20" Cursor="Hand" MouseLeftButtonUp="VendingCard_MouseLeftButtonUp">
+                            <StackPanel>
+                                <TextBlock Text="Vendingmachine timer" FontSize="18" FontWeight="Bold" Margin="0,0,0,10" Foreground="{StaticResource SecondaryBrush}"/>
+                                <TextBlock x:Name="VendingStatus" Text="900s" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Boosters Card -->
+                        <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Background="{StaticResource CardBrush}" CornerRadius="12" Margin="5" Padding="15">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Boosters" FontSize="18" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="Level: " VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <Button Content="-" Click="DecreaseLevel_Click" Padding="10,0" Width="30" Margin="0"/>
+                                        <TextBox x:Name="GlobalBoosterLevel" Text="1" Width="40" TextAlignment="Center" Margin="5,0" PreviewTextInput="LevelTextBox_PreviewTextInput" TextChanged="GlobalLevel_TextChanged"/>
+                                        <Button Content="+" Click="IncreaseLevel_Click" Padding="10,0" Width="30" Margin="0"/>
+                                    </StackPanel>
+                                </Grid>
+                                <ItemsControl x:Name="BoostersList">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="5"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Margin="5" Padding="10" CornerRadius="8" Cursor="Hand" MouseLeftButtonUp="BoosterCard_MouseLeftButtonUp">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#2A2A2A"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsCooldown}" Value="True">
+                                                                <Setter Property="Background" Value="#FF5555"/>
+                                                            </DataTrigger>
+                                                            <MultiDataTrigger>
+                                                                <MultiDataTrigger.Conditions>
+                                                                    <Condition Binding="{Binding IsCooldown}" Value="False"/>
+                                                                    <Condition Binding="{Binding IsRunning}" Value="False"/>
+                                                                    <Condition Binding="{Binding RemainingSeconds}" Value="0"/>
+                                                                </MultiDataTrigger.Conditions>
+                                                                <Setter Property="Background" Value="#FF5555"/>
+                                                            </MultiDataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                                    <TextBlock FontSize="20" FontWeight="Bold" HorizontalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="{Binding RemainingSeconds, StringFormat={}{0}s}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsRunning}" Value="False">
+                                                                        <Setter Property="Foreground" Value="Gray"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                                        <Setter Property="Foreground" Value="White"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding IsCooldown}" Value="True">
+                                                                        <Setter Property="Foreground" Value="White"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
             <TabItem Header="Alarms">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="10">
@@ -22,7 +144,7 @@
                                     <TextBox x:Name="TimerInput" Width="100" Text="00:10:00" VerticalAlignment="Center" ToolTip="Format: hh:mm:ss" TextChanged="TimerInput_TextChanged"/>
                                     <CheckBox x:Name="TimerEnabled" Content="Enabled" VerticalAlignment="Center" Margin="20,0,0,0" Checked="TimerEnabled_Changed" Unchecked="TimerEnabled_Changed"/>
                                 </StackPanel>
-                                <Border Background="{DynamicResource TimerBorderBrush}" CornerRadius="8" Padding="15,10" Margin="0,10,0,0">
+                                <Border x:Name="TimerCard" Background="{DynamicResource TimerBorderBrush}" CornerRadius="8" Padding="15,10" Margin="0,10,0,0" Cursor="Hand" MouseLeftButtonUp="TimerCard_MouseLeftButtonUp">
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <TextBlock Text="Time Remaining: " FontSize="16" VerticalAlignment="Center"/>
                                         <TextBlock x:Name="TimerStatus" Text="00:10:00" FontSize="24" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" VerticalAlignment="Center"/>
@@ -95,6 +217,60 @@
                                HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#888888" Visibility="Visible"/>
                 </Grid>
             </TabItem>
+            <TabItem Header="Hotkeys">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Hotkeys" FontSize="24" FontWeight="Bold" Margin="0,0,0,10" Foreground="{StaticResource PrimaryBrush}"/>
+                        <TextBlock Text="Click a box and press keys to set hotkeys. Escape to clear." FontSize="14" FontStyle="Italic" Foreground="#888888" Margin="0,0,0,20"/>
+
+                        <ItemsControl x:Name="HotkeysList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="200"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding ActionName}" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                        <TextBox Grid.Column="1" 
+                                                 Text="{Binding Converter={StaticResource HotkeyDisplayConverter}, Mode=OneWay}" 
+                                                 IsReadOnly="True" 
+                                                 Cursor="Hand"
+                                                 Tag="{Binding}"
+                                                 PreviewKeyDown="HotkeyTextBox_PreviewKeyDown"
+                                                 Background="#2A2A2A"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="Stats">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Statistics" FontSize="24" FontWeight="Bold" Margin="0,0,0,10" Foreground="{StaticResource SecondaryBrush}"/>
+                        
+                        <Border Background="{StaticResource CardBrush}" CornerRadius="12" Padding="20" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Research Rate" FontSize="18" FontWeight="Bold" Margin="0,0,0,10" Foreground="{StaticResource PrimaryBrush}"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock x:Name="ResearchPerSecondText" Text="0.00" FontSize="48" FontWeight="Bold"/>
+                                    <TextBlock Text=" /s" FontSize="24" FontWeight="Bold" VerticalAlignment="Bottom" Margin="5,0,0,10" Foreground="#888888"/>
+                                </StackPanel>
+                                <TextBlock Text="Auto-research progress detected from VRChat logs" FontSize="12" Foreground="#888888" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Background="{StaticResource CardBrush}" CornerRadius="12" Padding="20">
+                            <StackPanel>
+                                <TextBlock Text="Log Watcher Status" FontSize="18" FontWeight="Bold" Margin="0,0,0,10" Foreground="{StaticResource SecondaryBrush}"/>
+                                <TextBlock x:Name="LogWatcherStatusText" Text="Searching for VRChat logs..." FontSize="14" FontStyle="Italic" Foreground="#888888"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
             <TabItem Header="Settings">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <Grid>
@@ -108,23 +284,12 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBox x:Name="AlarmSoundPath" IsReadOnly="True" Margin="0,0,10,0"/>
-                                    <Button Content="Browse..." Grid.Column="1" Click="BrowseSound_Click"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <Button Content="Browse..." Click="BrowseSound_Click"/>
+                                        <Button Content="Clear" Click="ClearSound_Click" Background="#FFE0E0" Foreground="Black"/>
+                                    </StackPanel>
                                 </Grid>
                                 <Button Content="Play Test" HorizontalAlignment="Left" Margin="0,10,0,0" Click="PlayTestSound_Click"/>
-
-                                <Separator Margin="0,20"/>
-
-                                <TextBlock Text="Record Custom Alarm" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,5">
-                                    <TextBlock Text="Microphone:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <ComboBox x:Name="MicComboBox" Width="250" VerticalAlignment="Center" DisplayMemberPath="ProductName"/>
-                                    <Button Content="Refresh" Click="RefreshMics_Click" Margin="10,0,0,0"/>
-                                </StackPanel>
-                                
-                                <StackPanel Orientation="Horizontal" Margin="0,10">
-                                    <Button x:Name="RecordBtn" Content="Start Recording" Click="Record_Click" Width="120"/>
-                                    <TextBlock x:Name="RecordStatus" Text="Ready" VerticalAlignment="Center" Margin="20,0,0,0" FontStyle="Italic"/>
-                                </StackPanel>
 
                                 <Separator Margin="0,20"/>
 
@@ -140,6 +305,11 @@
                                 
                                 <CheckBox x:Name="MinimizeToTray" Content="Minimize to System Tray on Close" Margin="0,5" Checked="Setting_Changed" Unchecked="Setting_Changed"/>
                                 <TextBlock Text="When enabled, clicking the 'X' button will minimize the application to the system tray instead of closing it." 
+                                           FontSize="12" Foreground="#666666" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                                <CheckBox x:Name="OverlayEnabled" Content="Enable Game Overlay" Margin="0,5" Checked="OverlayEnabled_Changed" Unchecked="OverlayEnabled_Changed"/>
+                                <Button Content="Toggle Overlay" HorizontalAlignment="Left" Margin="0,5,0,0" Click="ToggleOverlay_Click"/>
+                                <TextBlock Text="Shows a transparent overlay with timers at the top of your screen." 
                                            FontSize="12" Foreground="#666666" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
